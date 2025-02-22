@@ -13,6 +13,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            flex-direction: column;
         }
 
         .container {
@@ -21,6 +22,19 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: none; /* Скрываем контейнер игры по умолчанию */
+        }
+
+        #auth-container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #file-input-container {
+            margin-bottom: 20px;
         }
 
         #board {
@@ -66,57 +80,200 @@
             font-size: 18px;
             font-weight: bold;
         }
+
+        #leaderboard {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        #leaderboard table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #leaderboard th, #leaderboard td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        #leaderboard th {
+            background-color: #f4f4f4;
+        }
     </style>
 </head>
 <body>
+    <!-- Окно регистрации и входа -->
+    <div id="auth-container">
+        <h1>Wordle</h1>
+        <div id="file-input-container">
+            <input type="file" id="file-input" accept=".txt">
+        </div>
+        <div id="auth-form">
+            <input type="text" id="username" placeholder="Имя пользователя">
+            <input type="password" id="password" placeholder="Пароль">
+            <button id="register-button">Зарегистрироваться</button>
+            <button id="login-button">Войти</button>
+        </div>
+        <div id="auth-message"></div>
+    </div>
+
+    <!-- Игровой интерфейс -->
     <div class="container">
         <h1>Wordle</h1>
         <div id="board"></div>
         <div id="message"></div>
         <input type="text" id="guess-input" maxlength="5" placeholder="Введите слово">
         <button id="submit-button">Отправить</button>
+        <div id="leaderboard">
+            <h2>Таблица лидеров</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Имя</th>
+                        <th>Рекорд</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body"></tbody>
+            </table>
+        </div>
+        <div id="personal-record">
+            <h2>Ваш рекорд: <span id="record-value">0</span></h2>
+        </div>
     </div>
 
     <script>
-        // Списки слов (можно загрузить из внешнего источника)
-        const validWords = [
-            "apple", "brave", "crane", "dwarf", "eagle", "flame", "globe", "honey", "igloo", "jolly",
-            "karma", "lemon", "mango", "noble", "olive", "pride", "quilt", "robin", "sugar", "tiger",
-            "umbra", "vivid", "whale", "xenon", "yacht", "zebra", "actor", "badge", "cable", "dance",
-            "earth", "fable", "giant", "haste", "ideal", "jewel", "kiosk", "latch", "mirth", "nymph",
-            "oasis", "piano", "quark", "rival", "scent", "tulip", "ultra", "vapor", "waltz", "yield",
-            "zesty", "amber", "bliss", "coral", "dusky", "ember", "flint", "gauze", "hazel", "inert",
-            "joust", "kayak", "lumen", "mural", "nexus", "optic", "plume", "quell", "rumba", "sable",
-            "tango", "umbra", "vivid", "wispy", "xylem", "yodel", "zonal", "acorn", "blink", "crisp",
-            "dwell", "epoch", "froth", "glint", "hovel", "inlet", "jolly", "kneel", "lurch", "mirth",
-            "noble", "otter", "plush", "quirk", "rival", "swoop", "tryst", "usher", "vivid", "waltz"
-        ];
-
-        const secretWords = [
-            "apple", "brave", "crane", "dwarf", "eagle", "flame", "globe", "honey", "igloo", "jolly",
-            "karma", "lemon", "mango", "noble", "olive", "pride", "quilt", "robin", "sugar", "tiger",
-            "umbra", "vivid", "whale", "xenon", "yacht", "zebra", "actor", "badge", "cable", "dance",
-            "earth", "fable", "giant", "haste", "ideal", "jewel", "kiosk", "latch", "mirth", "nymph",
-            "oasis", "piano", "quark", "rival", "scent", "tulip", "ultra", "vapor", "waltz", "yield",
-            "zesty", "amber", "bliss", "coral", "dusky", "ember", "flint", "gauze", "hazel", "inert",
-            "joust", "kayak", "lumen", "mural", "nexus", "optic", "plume", "quell", "rumba", "sable",
-            "tango", "umbra", "vivid", "wispy", "xylem", "yodel", "zonal", "acorn", "blink", "crisp",
-            "dwell", "epoch", "froth", "glint", "hovel", "inlet", "jolly", "kneel", "lurch", "mirth",
-            "noble", "otter", "plush", "quirk", "rival", "swoop", "tryst", "usher", "vivid", "waltz"
-        ];
-
-        // Выбор случайного слова из списка
-        const secretWord = secretWords[Math.floor(Math.random() * secretWords.length)].toUpperCase();
+        let validWords = []; // Список допустимых слов
+        let secretWords = []; // Список слов для угадывания
+        let secretWord = ""; // Загаданное слово
         const maxAttempts = 6;
         let attempt = 0;
+        let currentUser = null; // Текущий пользователь
 
+        const authContainer = document.getElementById("auth-container");
+        const authForm = document.getElementById("auth-form");
+        const authMessage = document.getElementById("auth-message");
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
+        const registerButton = document.getElementById("register-button");
+        const loginButton = document.getElementById("login-button");
+        const fileInput = document.getElementById("file-input");
+
+        const container = document.querySelector(".container");
         const board = document.getElementById("board");
         const message = document.getElementById("message");
         const guessInput = document.getElementById("guess-input");
         const submitButton = document.getElementById("submit-button");
+        const leaderboardBody = document.getElementById("leaderboard-body");
+        const recordValue = document.getElementById("record-value");
+
+        // Загрузка слов из файла
+        function loadWords(file) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const text = event.target.result;
+                const words = text.split("\n").map(word => word.trim().toUpperCase());
+
+                validWords = words; // Все слова считаются допустимыми
+                secretWords = words.filter(word => word.length === 5); // Слова для угадывания (5 букв)
+
+                secretWord = secretWords[Math.floor(Math.random() * secretWords.length)];
+                console.log("Загаданное слово:", secretWord); 
+
+                // Активируем игровое поле
+                createBoard();
+                guessInput.disabled = false;
+                submitButton.disabled = false;
+                message.textContent = "Игра началась! Введите слово.";
+            };
+            reader.readAsText(file);
+        }
+
+        // Обработка выбора файла
+        fileInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file && file.name === "worlds.txt") {
+                loadWords(file);
+            } else {
+                authMessage.textContent = "Пожалуйста, выберите файл worlds.txt.";
+            }
+        });
+
+        // Регистрация нового пользователя
+        registerButton.addEventListener("click", () => {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!username || !password) {
+                authMessage.textContent = "Введите имя пользователя и пароль.";
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem("users")) || {};
+            if (users[username]) {
+                authMessage.textContent = "Пользователь уже существует.";
+                return;
+            }
+
+            users[username] = { password, record: 0 };
+            localStorage.setItem("users", JSON.stringify(users));
+            authMessage.textContent = "Регистрация успешна! Войдите в систему.";
+        });
+
+        // Вход пользователя
+        loginButton.addEventListener("click", () => {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            const users = JSON.parse(localStorage.getItem("users")) || {};
+            if (!users[username] || users[username].password !== password) {
+                authMessage.textContent = "Неверное имя пользователя или пароль.";
+                return;
+            }
+
+            currentUser = username;
+            authContainer.style.display = "none";
+            container.style.display = "block";
+            updateLeaderboard();
+            recordValue.textContent = users[username].record;
+            initGame();
+        });
+
+        // Обновление таблицы лидеров
+        function updateLeaderboard() {
+            const users = JSON.parse(localStorage.getItem("users")) || {};
+            const sortedUsers = Object.entries(users).sort((a, b) => b[1].record - a[1].record);
+
+            leaderboardBody.innerHTML = "";
+            sortedUsers.forEach(([username, data]) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `<td>${username}</td><td>${data.record}</td>`;
+                leaderboardBody.appendChild(row);
+            });
+        }
+
+        // Обновление личного рекорда
+        function updateRecord() {
+            const users = JSON.parse(localStorage.getItem("users")) || {};
+            if (currentUser && users[currentUser]) {
+                users[currentUser].record++;
+                localStorage.setItem("users", JSON.stringify(users));
+                recordValue.textContent = users[currentUser].record;
+                updateLeaderboard();
+            }
+        }
+
+        // Инициализация игры
+        function initGame() {
+            createBoard();
+            guessInput.disabled = false;
+            submitButton.disabled = false;
+            message.textContent = "Игра началась! Введите слово.";
+        }
 
         // Создание игрового поля
         function createBoard() {
+            board.innerHTML = ""; // Очищаем поле
             for (let i = 0; i < maxAttempts; i++) {
                 const row = document.createElement("div");
                 row.className = "row";
@@ -152,7 +309,7 @@
                 return;
             }
 
-            if (!validWords.includes(guess.toLowerCase())) {
+            if (!validWords.includes(guess)) {
                 message.textContent = "Слово не найдено в списке допустимых слов!";
                 return;
             }
@@ -177,9 +334,8 @@
             guessInput.value = "";
             checkGuess(guess);
         });
-
-        // Инициализация игрового поля
-        createBoard();
+        // Инициализация при загрузке страницы
+        updateLeaderboard();
     </script>
 </body>
 </html>
