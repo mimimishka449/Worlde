@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wordle Game</title>
     <style>
-        body {
+body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             display: flex;
@@ -85,12 +85,73 @@
             font-size: 24px;
             font-weight: bold;
             text-transform: uppercase;
+            position: relative;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .cell[data-animation="flip"] {
+            animation: flip 0.5s ease-in-out forwards;
+        }
+
+        @keyframes flip {
+            0% {
+                transform: rotateX(0deg);
+            }
+            50% {
+                transform: rotateX(90deg);
+            }
+            100% {
+                transform: rotateX(0deg);
+            }
+        }
+
+        .cell .front, .cell .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .cell .front {
+            background-color: #fff;
+        }
+
+        .cell .back {
+            background-color: #6aaa64;
+            transform: rotateX(180deg);
+        }
+
+        #file-input-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #file-input-label {
+            padding: 10px;
+            background-color: #f8f8f8;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #file-status {
+            font-size: 14px;
+            color: #666;
         }
 
         #keyboard {
             display: flex;
             flex-direction: column;
-            align-items: center; /* Центрируем клавиатуру */
+            align-items: center;
             gap: 5px;
         }
 
@@ -141,7 +202,7 @@
             cursor: pointer;
         }
 
-        #new-word-button {
+        #restart-button {
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
@@ -185,13 +246,58 @@
             align-items: center; /* Центрируем игровое поле и кнопки */
             gap: 20px;
         }
+
+        #stats-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #stats-page {
+            display: none; /* Скрываем страницу статистики по умолчанию */
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #stats-page h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        #stats-page p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        #back-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #language-selector {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <!-- Окно регистрации и входа -->
     <div id="auth-container">
-        <h1>Wordle</h1>
+        <h1 id="auth-title">Wordle</h1>
+        <div id="language-selector">
+            <select id="language">
+                <option value="en">English</option>
+                <option value="ru">Русский</option>
+            </select>
+        </div>
         <div id="file-input-container">
+            <label id="file-input-label" for="file-input">Выбрать файл</label>
+            <span id="file-status">Файл не выбран</span>
             <input type="file" id="file-input" accept=".txt">
         </div>
         <div id="auth-form">
@@ -210,30 +316,31 @@
             <!-- Левая панель: таблица лидеров -->
             <div id="left-panel">
                 <div id="leaderboard">
-                    <h2>Таблица лидеров</h2>
+                    <h2 id="leaderboard-title">Таблица лидеров</h2>
                     <table>
                         <thead>
                             <tr>
-                                <th>Имя</th>
-                                <th>Рекорд</th>
+                                <th id="leaderboard-name">Имя</th>
+                                <th id="leaderboard-record">Рекорд</th>
                             </tr>
                         </thead>
                         <tbody id="leaderboard-body"></tbody>
                     </table>
                 </div>
+                <button id="stats-button">Личная статистика</button>
             </div>
 
             <!-- Центральная панель: игровое поле и кнопки -->
             <div id="center-panel">
                 <div id="personal-record">
-                    <h2>Ваш рекорд: <span id="record-value">0</span></h2>
+                    <h2 id="personal-record-title">Ваш рекорд: <span id="record-value">0</span></h2>
                 </div>
                 <div id="board"></div>
                 <div id="message"></div>
                 <div>
                     <input type="text" id="guess-input" maxlength="5" placeholder="Введите слово">
                     <button id="submit-button">Отправить</button>
-                    <button id="new-word-button">Начать сначала</button>
+                    <button id="restart-button">Начать сначала</button>
                 </div>
             </div>
 
@@ -244,7 +351,74 @@
         </div>
     </div>
 
+    <!-- Страница статистики -->
+    <div id="stats-page">
+        <h2 id="stats-username"></h2>
+        <p id="total-games-text">Количество игр: <span id="total-games">0</span></p>
+        <p id="stats-record-text">Рекорд отгаданных слов: <span id="stats-record">0</span></p>
+        <button id="back-button">Назад</button>
+    </div>
+
     <script>
+        // Словари для перевода
+        const translations = {
+            en: {
+                authTitle: "Wordle",
+                usernamePlaceholder: "Username",
+                passwordPlaceholder: "Password",
+                registerButton: "Register",
+                loginButton: "Login",
+                leaderboardTitle: "Leaderboard",
+                leaderboardName: "Name",
+                leaderboardRecord: "Record",
+                personalRecordTitle: "Your Record:",
+                guessInputPlaceholder: "Enter a word",
+                submitButton: "Submit",
+                restartButton: "Restart",
+                totalGamesText: "Total Games:",
+                statsRecordText: "Best Record:",
+                backButton: "Back",
+                statsButton: "Personal Stats",
+                fileInputLabel: "Choose File",
+                fileStatus: "No file chosen",
+                authMessageFile: "Please upload words.txt.",
+                authMessageFileRU: "Please upload wordsRU.txt.",
+                gameStartMessage: "Game started! Enter a word.",
+                wrongFileMessage: "Please upload the correct file for the selected language.",
+            },
+            ru: {
+                authTitle: "Wordle",
+                usernamePlaceholder: "Имя пользователя",
+                passwordPlaceholder: "Пароль",
+                registerButton: "Зарегистрироваться",
+                loginButton: "Войти",
+                leaderboardTitle: "Таблица лидеров",
+                leaderboardName: "Имя",
+                leaderboardRecord: "Рекорд",
+                personalRecordTitle: "Ваш рекорд:",
+                guessInputPlaceholder: "Введите слово",
+                submitButton: "Отправить",
+                restartButton: "Начать сначала",
+                totalGamesText: "Количество игр:",
+                statsRecordText: "Рекорд отгаданных слов:",
+                backButton: "Назад",
+                statsButton: "Личная статистика",
+                fileInputLabel: "Выбрать файл",
+                fileStatus: "Файл не выбран",
+                authMessageFile: "Пожалуйста, загрузите words.txt.",
+                authMessageFileRU: "Пожалуйста, загрузите wordsRU.txt.",
+                gameStartMessage: "Игра началась! Введите слово.",
+                wrongFileMessage: "Пожалуйста, загрузите правильный файл для выбранного языка.",
+            },
+        };
+
+        // Раскладки клавиатуры
+        const keyboardLayouts = {
+            en: ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"],
+            ru: ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮ"],
+        };
+
+        let currentLanguage = "en"; // Текущий язык
         let validWords = []; // Список допустимых слов
         let secretWords = []; // Список слов для угадывания
         let secretWord = ""; // Загаданное слово
@@ -253,81 +427,158 @@
         let currentUser = null; // Текущий пользователь
 
         const authContainer = document.getElementById("auth-container");
-        const authForm = document.getElementById("auth-form");
-        const authMessage = document.getElementById("auth-message");
+        const authTitle = document.getElementById("auth-title");
         const usernameInput = document.getElementById("username");
         const passwordInput = document.getElementById("password");
         const registerButton = document.getElementById("register-button");
         const loginButton = document.getElementById("login-button");
         const fileInput = document.getElementById("file-input");
+        const fileInputLabel = document.getElementById("file-input-label");
+        const fileStatus = document.getElementById("file-status");
+        const languageSelector = document.getElementById("language");
 
         const container = document.querySelector(".container");
         const board = document.getElementById("board");
         const message = document.getElementById("message");
         const guessInput = document.getElementById("guess-input");
         const submitButton = document.getElementById("submit-button");
-        const newWordButton = document.getElementById("new-word-button");
+        const restartButton = document.getElementById("restart-button");
         const leaderboardBody = document.getElementById("leaderboard-body");
         const recordValue = document.getElementById("record-value");
         const keyboard = document.getElementById("keyboard");
+        const statsButton = document.getElementById("stats-button");
+        const statsPage = document.getElementById("stats-page");
+        const statsUsername = document.getElementById("stats-username");
+        const totalGames = document.getElementById("total-games");
+        const statsRecord = document.getElementById("stats-record");
+        const backButton = document.getElementById("back-button");
 
-        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const letterStates = {}; // Состояние букв: null, "exists", "correct", "none"
 
-        // Инициализация клавиатуры
-        function initKeyboard() {
-            const keyboardLayout = [
-                "QWERTYUIOP",
-                "ASDFGHJKL",
-                "ZXCVBNM"
-            ];
-
-            keyboard.innerHTML = "";
-            keyboardLayout.forEach(rowLetters => {
-                const row = document.createElement("div");
-                row.className = "keyboard-row";
-                for (const letter of rowLetters) {
-                    const key = document.createElement("div");
-                    key.className = "key";
-                    key.textContent = letter;
-                    row.appendChild(key);
-                    letterStates[letter] = null; // Изначально состояние неизвестно
-                }
-                keyboard.appendChild(row);
-            });
+        // Хэширование пароля (упрощенный пример)
+        function hashPassword(password) {
+            return password.split("").reverse().join(""); // Пример хэширования
         }
+
+        // Перевод интерфейса
+        function translatePage(lang) {
+			const texts = translations[lang];
+			authTitle.textContent = texts.authTitle;
+			usernameInput.placeholder = texts.usernamePlaceholder;
+			passwordInput.placeholder = texts.passwordPlaceholder;
+			registerButton.textContent = texts.registerButton;
+			loginButton.textContent = texts.loginButton;
+			document.getElementById("leaderboard-title").textContent = texts.leaderboardTitle;
+			document.getElementById("leaderboard-name").textContent = texts.leaderboardName;
+			document.getElementById("leaderboard-record").textContent = texts.leaderboardRecord;
+			document.getElementById("personal-record-title").textContent = texts.personalRecordTitle;
+			guessInput.placeholder = texts.guessInputPlaceholder;
+			submitButton.textContent = texts.submitButton;
+			restartButton.textContent = texts.restartButton;
+			document.getElementById("total-games-text").textContent = texts.totalGamesText;
+			document.getElementById("stats-record-text").textContent = texts.statsRecordText;
+			backButton.textContent = texts.backButton;
+			statsButton.textContent = texts.statsButton;
+			fileInputLabel.textContent = texts.fileInputLabel;
+			fileStatus.textContent = texts.fileStatus;
+			initKeyboard(); // Пересоздаем клавиатуру при смене языка
+		}
+
+        // Инициализация клавиатуры
+		function initKeyboard() {
+			const layout = keyboardLayouts[currentLanguage];
+			keyboard.innerHTML = ""; // Очищаем клавиатуру
+			layout.forEach(rowLetters => {
+				const row = document.createElement("div");
+				row.className = "keyboard-row";
+				for (const letter of rowLetters) {
+					const key = document.createElement("div");
+					key.className = "key";
+					key.textContent = letter;
+					row.appendChild(key);
+					letterStates[letter] = null; // Изначально состояние неизвестно
+				}
+				keyboard.appendChild(row);
+			});
+		}
+
+        // Обработка выбора языка
+        languageSelector.addEventListener("change", (event) => {
+            currentLanguage = event.target.value;
+            translatePage(currentLanguage);
+        });
+
+        // Обработка выбора файла
+        fileInput.addEventListener("change", (event) => {
+			const file = event.target.files[0];
+			const expectedFileName = currentLanguage === "ru" ? "wordsRU.txt" : "words.txt";
+
+			if (file && file.name === expectedFileName) {
+				fileStatus.textContent = file.name;
+				loadWords(file);
+			} else {
+				authMessage.textContent = translations[currentLanguage].wrongFileMessage;
+			}
+		});
+
+        // Анимация переворачивания букв
+        function flipCells(row, guess) {
+            const cells = row.children;
+            for (let i = 0; i < cells.length; i++) {
+                setTimeout(() => {
+                    const cell = cells[i];
+                    cell.setAttribute("data-animation", "flip");
+
+                    // Обработка завершения анимации
+                    cell.addEventListener("animationend", () => {
+                        cell.removeAttribute("data-animation");
+                        if (guess[i] === secretWord[i]) {
+                            cell.style.backgroundColor = "#6aaa64"; // Зеленый
+                        } else if (secretWord.includes(guess[i])) {
+                            cell.style.backgroundColor = "#c9b458"; // Желтый
+                        } else {
+                            cell.style.backgroundColor = "#787c7e"; // Серый
+                        }
+                    }, { once: true }); // Обработчик сработает только один раз
+                }, i * 140); // Интервал между буквами
+            }
+        }
+
+        // Инициализация при загрузке страницы
+        translatePage(currentLanguage);
+        updateLeaderboard();
 
         // Обновление состояния букв на клавиатуре
-        function updateKeyboard(guess) {
-            for (let i = 0; i < guess.length; i++) {
-                const letter = guess[i];
-                if (secretWord[i] === letter) {
-                    letterStates[letter] = "correct"; // Буква на правильном месте
-                } else if (secretWord.includes(letter)) {
-                    if (letterStates[letter] !== "correct") {
-                        letterStates[letter] = "exists"; // Буква есть в слове, но не на этом месте
-                    }
-                } else {
-                    if (letterStates[letter] === null) {
-                        letterStates[letter] = "none"; // Буквы нет в слове
-                    }
-                }
-            }
+		function updateKeyboard(guess) {
+			for (let i = 0; i < guess.length; i++) {
+				const letter = guess[i];
+				if (secretWord[i] === letter) {
+					letterStates[letter] = "correct"; // Буква на правильном месте
+				} else if (secretWord.includes(letter)) {
+					if (letterStates[letter] !== "correct") {
+						letterStates[letter] = "exists"; // Буква есть в слове, но не на этом месте
+					}
+				} else {
+					if (letterStates[letter] === null) {
+						letterStates[letter] = "none"; // Буквы нет в слове
+					}
+				}
+			}
 
-            // Обновляем цвета клавиш
-            const keys = keyboard.querySelectorAll(".key");
-            keys.forEach(key => {
-                const letter = key.textContent;
-                key.className = "key"; // Сбрасываем классы
-                if (letterStates[letter] === "correct") {
-                    key.classList.add("correct");
-                } else if (letterStates[letter] === "exists") {
-                    key.classList.add("exists");
-                } else if (letterStates[letter] === "none") {
-                    key.classList.add("none");
-                }
-            });
-        }
+			// Обновляем цвета клавиш
+			const keys = keyboard.querySelectorAll(".key");
+			keys.forEach(key => {
+				const letter = key.textContent;
+				key.className = "key"; // Сбрасываем классы
+				if (letterStates[letter] === "correct") {
+					key.classList.add("correct");
+				} else if (letterStates[letter] === "exists") {
+					key.classList.add("exists");
+				} else if (letterStates[letter] === "none") {
+					key.classList.add("none");
+				}
+			});
+		}
 
         // Загрузка слов из файла
         function loadWords(file) {
@@ -346,69 +597,75 @@
         }
 
         // Генерация нового слова
-        function generateNewWord() {
-            secretWord = secretWords[Math.floor(Math.random() * secretWords.length)];
-            console.log("Загаданное слово:", secretWord); // Для отладки
-            attempt = 0; // Сбрасываем попытки
-            board.innerHTML = ""; // Очищаем игровое поле
-            createBoard(); // Создаем новое игровое поле
-            guessInput.disabled = false;
-            submitButton.disabled = false;
-            message.textContent = "Игра началась! Введите слово.";
-            initKeyboard(); // Сбрасываем состояние клавиатуры
-        }
+		function generateNewWord() {
+			secretWord = secretWords[Math.floor(Math.random() * secretWords.length)];
+			console.log("Загаданное слово:", secretWord); // Для отладки
+			attempt = 0; // Сбрасываем попытки
+			board.innerHTML = ""; // Очищаем игровое поле
+			createBoard(); // Создаем новое игровое поле
+			guessInput.disabled = false;
+			submitButton.disabled = false;
+			message.textContent = "Игра началась! Введите слово.";
+			initKeyboard(); // Сбрасываем состояние клавиатуры
+		}
 
         // Проверка введенного слова
-        function checkGuess(guess) {
-            if (guess.length !== 5) {
-                message.textContent = "Слово должно быть из 5 букв!";
-                return;
-            }
+		function checkGuess(guess) {
+			if (guess.length !== 5) {
+				message.textContent = "Слово должно быть из 5 букв!";
+				return;
+			}
 
-            if (!validWords.includes(guess)) {
-                message.textContent = "Слово не найдено в списке допустимых слов!";
-                return;
-            }
+			if (!validWords.includes(guess)) {
+				message.textContent = "Слово не найдено в списке допустимых слов!";
+				return;
+			}
 
-            updateBoard(guess);
-            updateKeyboard(guess);
-            attempt++;
+			updateBoard(guess);
+			updateKeyboard(guess); // Обновляем состояние клавиатуры
+			attempt++;
 
-            if (guess === secretWord) {
-                message.textContent = "Поздравляем! Вы угадали слово!";
-                submitButton.disabled = true;
-                updateRecord();
-            } else if (attempt === maxAttempts) {
-                message.textContent = `Игра окончена! Загаданное слово было: ${secretWord}`;
-                submitButton.disabled = true;
-            } else {
-                message.textContent = "";
-            }
-        }
+			if (guess === secretWord) {
+				message.textContent = "Поздравляем! Вы угадали слово!";
+				submitButton.disabled = true;
+				updateRecord();
+			} else if (attempt === maxAttempts) {
+				message.textContent = `Игра окончена! Загаданное слово было: ${secretWord}`;
+				submitButton.disabled = true;
+			} else {
+				message.textContent = "";
+			}
+		}
 
         // Обновление игрового поля после ввода слова
         function updateBoard(guess) {
-            const row = board.children[attempt];
-            for (let i = 0; i < 5; i++) {
-                const cell = row.children[i];
-                cell.textContent = guess[i];
-                if (guess[i] === secretWord[i]) {
-                    cell.style.backgroundColor = "#6aaa64"; // Зеленый: правильная буква на правильном месте
-                } else if (secretWord.includes(guess[i])) {
-                    cell.style.backgroundColor = "#c9b458"; // Желтый: правильная буква на неправильном месте
-                } else {
-                    cell.style.backgroundColor = "#787c7e"; // Серый: буква отсутствует в слове
-                }
-            }
-        }
+			const row = board.children[attempt];
+			for (let i = 0; i < 5; i++) {
+				const cell = row.children[i];
+				cell.textContent = guess[i];
+				cell.setAttribute("data-animation", "flip"); // Добавляем атрибут для анимации
+
+				// Обработка завершения анимации
+				cell.addEventListener("animationend", () => {
+					cell.removeAttribute("data-animation"); // Удаляем атрибут после завершения
+					if (guess[i] === secretWord[i]) {
+						cell.style.backgroundColor = "#6aaa64"; // Зеленый
+					} else if (secretWord.includes(guess[i])) {
+						cell.style.backgroundColor = "#c9b458"; // Желтый
+					} else {
+						cell.style.backgroundColor = "#787c7e"; // Серый
+					}
+				}, { once: true }); // Обработчик сработает только один раз
+			}
+		}
 
         // Обработка выбора файла
         fileInput.addEventListener("change", (event) => {
             const file = event.target.files[0];
-            if (file && file.name === "worlds.txt") {
+            if (file && (file.name === "words.txt" || file.name === "wordsRU.txt")) {
                 loadWords(file);
             } else {
-                authMessage.textContent = "Пожалуйста, выберите файл worlds.txt.";
+                authMessage.textContent = "Пожалуйста, выберите файл words.txt или wordsRU.txt.";
             }
         });
 
@@ -428,7 +685,7 @@
                 return;
             }
 
-            users[username] = { password, record: 0 };
+            users[username] = { password: hashPassword(password), record: 0, totalGames: 0 };
             localStorage.setItem("users", JSON.stringify(users));
             authMessage.textContent = "Регистрация успешна! Войдите в систему.";
         });
@@ -439,11 +696,10 @@
             const password = passwordInput.value.trim();
 
             const users = JSON.parse(localStorage.getItem("users")) || {};
-            if (!users[username] || users[username].password !== password) {
+            if (!users[username] || users[username].password !== hashPassword(password)) {
                 authMessage.textContent = "Неверное имя пользователя или пароль.";
                 return;
             }
-
             currentUser = username;
             authContainer.style.display = "none";
             container.style.display = "block";
@@ -470,6 +726,7 @@
             const users = JSON.parse(localStorage.getItem("users")) || {};
             if (currentUser && users[currentUser]) {
                 users[currentUser].record++;
+                users[currentUser].totalGames++;
                 localStorage.setItem("users", JSON.stringify(users));
                 recordValue.textContent = users[currentUser].record;
                 updateLeaderboard();
@@ -485,21 +742,20 @@
             initKeyboard(); // Инициализируем клавиатуру
         }
 
-        // Создание игрового поля
+        // Инициализация игрового поля
         function createBoard() {
-            board.innerHTML = ""; // Очищаем поле
-            for (let i = 0; i < maxAttempts; i++) {
-                const row = document.createElement("div");
-                row.className = "row";
-                for (let j = 0; j < 5; j++) {
-                    const cell = document.createElement("div");
-                    cell.className = "cell";
-                    row.appendChild(cell);
-                }
-                board.appendChild(row);
-            }
-        }
-
+			board.innerHTML = ""; // Очищаем поле
+			for (let i = 0; i < maxAttempts; i++) {
+				const row = document.createElement("div");
+				row.className = "row";
+				for (let j = 0; j < 5; j++) {
+					const cell = document.createElement("div");
+					cell.className = "cell";
+					row.appendChild(cell);
+				}
+				board.appendChild(row);
+			}
+		}
         // Обработка нажатия кнопки "Отправить"
         submitButton.addEventListener("click", () => {
             const guess = guessInput.value.toUpperCase();
@@ -507,13 +763,45 @@
             checkGuess(guess);
         });
 
-        // Обработка нажатия кнопки "Новое слово"
-        newWordButton.addEventListener("click", () => {
-            generateNewWord();
+        // Обработка нажатия кнопки "Начать сначала"
+        restartButton.addEventListener("click", () => {
+            const users = JSON.parse(localStorage.getItem("users")) || {};
+            if (currentUser && users[currentUser]) {
+                users[currentUser].totalGames++; // Увеличиваем количество сыгранных игр
+                localStorage.setItem("users", JSON.stringify(users));
+            }
+            generateNewWord(); // Генерация нового слова
         });
 
-        // Инициализация при загрузке страницы
-        updateLeaderboard();
+        // Обработка нажатия кнопки "Личная статистика"
+        statsButton.addEventListener("click", () => {
+            const users = JSON.parse(localStorage.getItem("users")) || {};
+            if (currentUser && users[currentUser]) {
+                statsUsername.textContent = `Пользователь: ${currentUser}`;
+                totalGames.textContent = users[currentUser].totalGames;
+                statsRecord.textContent = users[currentUser].record;
+                container.style.display = "none"; // Скрываем игровой интерфейс
+                statsPage.style.display = "block"; // Показываем страницу статистики
+            }
+        });
+
+        // Обработка нажатия кнопки "Назад" на странице статистики
+        backButton.addEventListener("click", () => {
+            statsPage.style.display = "none"; // Скрываем страницу статистики
+            container.style.display = "block"; // Показываем игровой интерфейс
+        });
+
+        // Обработка выбора языка
+        languageSelector.addEventListener("change", (event) => {
+            currentLanguage = event.target.value;
+            if (currentLanguage === "ru") {
+                fileInput.accept = ".txt";
+                fileInput.setAttribute("placeholder", "Загрузите wordsRU.txt");
+            } else {
+                fileInput.accept = ".txt";
+                fileInput.setAttribute("placeholder", "Загрузите words.txt");
+            }
+        });
     </script>
 </body>
 </html>
