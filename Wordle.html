@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #board {
+            display: grid;
+            grid-template-rows: repeat(6, 60px);
+            grid-gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(5, 60px);
+            grid-gap: 5px;
+        }
+
+        .cell {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #ccc;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        #guess-input {
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+            margin-right: 10px;
+        }
+
+        #submit-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Wordle</h1>
+        <div id="board"></div>
+        <div id="message"></div>
+        <input type="text" id="guess-input" maxlength="5" placeholder="Введите слово">
+        <button id="submit-button">Отправить</button>
+    </div>
+
+    <script>
+        // Списки слов (можно загрузить из внешнего источника)
+        const validWords = [
+            "apple", "brave", "crane", "dwarf", "eagle", "flame", "globe", "honey", "igloo", "jolly",
+            "karma", "lemon", "mango", "noble", "olive", "pride", "quilt", "robin", "sugar", "tiger",
+            "umbra", "vivid", "whale", "xenon", "yacht", "zebra", "actor", "badge", "cable", "dance",
+            "earth", "fable", "giant", "haste", "ideal", "jewel", "kiosk", "latch", "mirth", "nymph",
+            "oasis", "piano", "quark", "rival", "scent", "tulip", "ultra", "vapor", "waltz", "yield",
+            "zesty", "amber", "bliss", "coral", "dusky", "ember", "flint", "gauze", "hazel", "inert",
+            "joust", "kayak", "lumen", "mural", "nexus", "optic", "plume", "quell", "rumba", "sable",
+            "tango", "umbra", "vivid", "wispy", "xylem", "yodel", "zonal", "acorn", "blink", "crisp",
+            "dwell", "epoch", "froth", "glint", "hovel", "inlet", "jolly", "kneel", "lurch", "mirth",
+            "noble", "otter", "plush", "quirk", "rival", "swoop", "tryst", "usher", "vivid", "waltz"
+        ];
+
+        const secretWords = [
+            "apple", "brave", "crane", "dwarf", "eagle", "flame", "globe", "honey", "igloo", "jolly",
+            "karma", "lemon", "mango", "noble", "olive", "pride", "quilt", "robin", "sugar", "tiger",
+            "umbra", "vivid", "whale", "xenon", "yacht", "zebra", "actor", "badge", "cable", "dance",
+            "earth", "fable", "giant", "haste", "ideal", "jewel", "kiosk", "latch", "mirth", "nymph",
+            "oasis", "piano", "quark", "rival", "scent", "tulip", "ultra", "vapor", "waltz", "yield",
+            "zesty", "amber", "bliss", "coral", "dusky", "ember", "flint", "gauze", "hazel", "inert",
+            "joust", "kayak", "lumen", "mural", "nexus", "optic", "plume", "quell", "rumba", "sable",
+            "tango", "umbra", "vivid", "wispy", "xylem", "yodel", "zonal", "acorn", "blink", "crisp",
+            "dwell", "epoch", "froth", "glint", "hovel", "inlet", "jolly", "kneel", "lurch", "mirth",
+            "noble", "otter", "plush", "quirk", "rival", "swoop", "tryst", "usher", "vivid", "waltz"
+        ];
+
+        // Выбор случайного слова из списка
+        const secretWord = secretWords[Math.floor(Math.random() * secretWords.length)].toUpperCase();
+        const maxAttempts = 6;
+        let attempt = 0;
+
+        const board = document.getElementById("board");
+        const message = document.getElementById("message");
+        const guessInput = document.getElementById("guess-input");
+        const submitButton = document.getElementById("submit-button");
+
+        // Создание игрового поля
+        function createBoard() {
+            for (let i = 0; i < maxAttempts; i++) {
+                const row = document.createElement("div");
+                row.className = "row";
+                for (let j = 0; j < 5; j++) {
+                    const cell = document.createElement("div");
+                    cell.className = "cell";
+                    row.appendChild(cell);
+                }
+                board.appendChild(row);
+            }
+        }
+
+        // Обновление игрового поля после ввода слова
+        function updateBoard(guess) {
+            const row = board.children[attempt];
+            for (let i = 0; i < 5; i++) {
+                const cell = row.children[i];
+                cell.textContent = guess[i];
+                if (guess[i] === secretWord[i]) {
+                    cell.style.backgroundColor = "#6aaa64"; // Зеленый: правильная буква на правильном месте
+                } else if (secretWord.includes(guess[i])) {
+                    cell.style.backgroundColor = "#c9b458"; // Желтый: правильная буква на неправильном месте
+                } else {
+                    cell.style.backgroundColor = "#787c7e"; // Серый: буква отсутствует в слове
+                }
+            }
+        }
+
+        // Проверка введенного слова
+        function checkGuess(guess) {
+            if (guess.length !== 5) {
+                message.textContent = "Слово должно быть из 5 букв!";
+                return;
+            }
+
+            if (!validWords.includes(guess.toLowerCase())) {
+                message.textContent = "Слово не найдено в списке допустимых слов!";
+                return;
+            }
+
+            updateBoard(guess);
+            attempt++;
+
+            if (guess === secretWord) {
+                message.textContent = "Поздравляем! Вы угадали слово!";
+                submitButton.disabled = true;
+            } else if (attempt === maxAttempts) {
+                message.textContent = `Игра окончена! Загаданное слово было: ${secretWord}`;
+                submitButton.disabled = true;
+            } else {
+                message.textContent = "";
+            }
+        }
+
+        // Обработка нажатия кнопки "Отправить"
+        submitButton.addEventListener("click", () => {
+            const guess = guessInput.value.toUpperCase();
+            guessInput.value = "";
+            checkGuess(guess);
+        });
+
+        // Инициализация игрового поля
+        createBoard();
+    </script>
+</body>
+</html>
