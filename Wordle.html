@@ -37,6 +37,31 @@
             margin-bottom: 20px;
         }
 
+        #game-wrapper {
+            display: flex;
+            gap: 40px; /* Расстояние между элементами */
+        }
+
+        #left-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Центрируем таблицу лидеров */
+            gap: 20px;
+        }
+
+        #right-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Центрируем клавиатуру */
+            gap: 20px;
+        }
+
+        #title {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
         #board {
             display: grid;
             grid-template-rows: repeat(6, 60px);
@@ -62,6 +87,47 @@
             text-transform: uppercase;
         }
 
+        #keyboard {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Центрируем клавиатуру */
+            gap: 5px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            gap: 5px;
+        }
+
+        .key {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            background-color: #f8f8f8;
+        }
+
+        .key.correct {
+            background-color: #6aaa64; /* Зеленый */
+            color: white;
+        }
+
+        .key.exists {
+            background-color: #c9b458; /* Желтый */
+            color: white;
+        }
+
+        .key.none {
+            background-color: #787c7e; /* Серый */
+            color: white;
+        }
+
         #guess-input {
             padding: 10px;
             font-size: 16px;
@@ -75,6 +141,12 @@
             cursor: pointer;
         }
 
+        #new-word-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
         #message {
             margin-top: 20px;
             font-size: 18px;
@@ -82,7 +154,6 @@
         }
 
         #leaderboard {
-            margin-top: 20px;
             font-size: 16px;
         }
 
@@ -99,6 +170,20 @@
 
         #leaderboard th {
             background-color: #f4f4f4;
+        }
+
+        #personal-record {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center; /* Центрируем надпись "Ваш рекорд" */
+        }
+
+        #center-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Центрируем игровое поле и кнопки */
+            gap: 20px;
         }
     </style>
 </head>
@@ -120,25 +205,42 @@
 
     <!-- Игровой интерфейс -->
     <div class="container">
-        <h1>Wordle</h1>
-        <div id="board"></div>
-        <div id="message"></div>
-        <input type="text" id="guess-input" maxlength="5" placeholder="Введите слово">
-        <button id="submit-button">Отправить</button>
-        <div id="leaderboard">
-            <h2>Таблица лидеров</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Имя</th>
-                        <th>Рекорд</th>
-                    </tr>
-                </thead>
-                <tbody id="leaderboard-body"></tbody>
-            </table>
-        </div>
-        <div id="personal-record">
-            <h2>Ваш рекорд: <span id="record-value">0</span></h2>
+        <div id="title">Wordle</div>
+        <div id="game-wrapper">
+            <!-- Левая панель: таблица лидеров -->
+            <div id="left-panel">
+                <div id="leaderboard">
+                    <h2>Таблица лидеров</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Имя</th>
+                                <th>Рекорд</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Центральная панель: игровое поле и кнопки -->
+            <div id="center-panel">
+                <div id="personal-record">
+                    <h2>Ваш рекорд: <span id="record-value">0</span></h2>
+                </div>
+                <div id="board"></div>
+                <div id="message"></div>
+                <div>
+                    <input type="text" id="guess-input" maxlength="5" placeholder="Введите слово">
+                    <button id="submit-button">Отправить</button>
+                    <button id="new-word-button">Начать сначала</button>
+                </div>
+            </div>
+
+            <!-- Правая панель: клавиатура -->
+            <div id="right-panel">
+                <div id="keyboard"></div>
+            </div>
         </div>
     </div>
 
@@ -164,8 +266,68 @@
         const message = document.getElementById("message");
         const guessInput = document.getElementById("guess-input");
         const submitButton = document.getElementById("submit-button");
+        const newWordButton = document.getElementById("new-word-button");
         const leaderboardBody = document.getElementById("leaderboard-body");
         const recordValue = document.getElementById("record-value");
+        const keyboard = document.getElementById("keyboard");
+
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const letterStates = {}; // Состояние букв: null, "exists", "correct", "none"
+
+        // Инициализация клавиатуры
+        function initKeyboard() {
+            const keyboardLayout = [
+                "QWERTYUIOP",
+                "ASDFGHJKL",
+                "ZXCVBNM"
+            ];
+
+            keyboard.innerHTML = "";
+            keyboardLayout.forEach(rowLetters => {
+                const row = document.createElement("div");
+                row.className = "keyboard-row";
+                for (const letter of rowLetters) {
+                    const key = document.createElement("div");
+                    key.className = "key";
+                    key.textContent = letter;
+                    row.appendChild(key);
+                    letterStates[letter] = null; // Изначально состояние неизвестно
+                }
+                keyboard.appendChild(row);
+            });
+        }
+
+        // Обновление состояния букв на клавиатуре
+        function updateKeyboard(guess) {
+            for (let i = 0; i < guess.length; i++) {
+                const letter = guess[i];
+                if (secretWord[i] === letter) {
+                    letterStates[letter] = "correct"; // Буква на правильном месте
+                } else if (secretWord.includes(letter)) {
+                    if (letterStates[letter] !== "correct") {
+                        letterStates[letter] = "exists"; // Буква есть в слове, но не на этом месте
+                    }
+                } else {
+                    if (letterStates[letter] === null) {
+                        letterStates[letter] = "none"; // Буквы нет в слове
+                    }
+                }
+            }
+
+            // Обновляем цвета клавиш
+            const keys = keyboard.querySelectorAll(".key");
+            keys.forEach(key => {
+                const letter = key.textContent;
+                key.className = "key"; // Сбрасываем классы
+                if (letterStates[letter] === "correct") {
+                    key.classList.add("correct");
+                } else if (letterStates[letter] === "exists") {
+                    key.classList.add("exists");
+                } else if (letterStates[letter] === "none") {
+                    key.classList.add("none");
+                }
+            });
+        }
 
         // Загрузка слов из файла
         function loadWords(file) {
@@ -177,16 +339,67 @@
                 validWords = words; // Все слова считаются допустимыми
                 secretWords = words.filter(word => word.length === 5); // Слова для угадывания (5 букв)
 
-                secretWord = secretWords[Math.floor(Math.random() * secretWords.length)];
-                console.log("Загаданное слово:", secretWord); 
-
-                // Активируем игровое поле
-                createBoard();
-                guessInput.disabled = false;
-                submitButton.disabled = false;
-                message.textContent = "Игра началась! Введите слово.";
+                generateNewWord(); // Генерация нового слова
+                initKeyboard(); // Инициализируем клавиатуру
             };
             reader.readAsText(file);
+        }
+
+        // Генерация нового слова
+        function generateNewWord() {
+            secretWord = secretWords[Math.floor(Math.random() * secretWords.length)];
+            console.log("Загаданное слово:", secretWord); // Для отладки
+            attempt = 0; // Сбрасываем попытки
+            board.innerHTML = ""; // Очищаем игровое поле
+            createBoard(); // Создаем новое игровое поле
+            guessInput.disabled = false;
+            submitButton.disabled = false;
+            message.textContent = "Игра началась! Введите слово.";
+            initKeyboard(); // Сбрасываем состояние клавиатуры
+        }
+
+        // Проверка введенного слова
+        function checkGuess(guess) {
+            if (guess.length !== 5) {
+                message.textContent = "Слово должно быть из 5 букв!";
+                return;
+            }
+
+            if (!validWords.includes(guess)) {
+                message.textContent = "Слово не найдено в списке допустимых слов!";
+                return;
+            }
+
+            updateBoard(guess);
+            updateKeyboard(guess);
+            attempt++;
+
+            if (guess === secretWord) {
+                message.textContent = "Поздравляем! Вы угадали слово!";
+                submitButton.disabled = true;
+                updateRecord();
+            } else if (attempt === maxAttempts) {
+                message.textContent = `Игра окончена! Загаданное слово было: ${secretWord}`;
+                submitButton.disabled = true;
+            } else {
+                message.textContent = "";
+            }
+        }
+
+        // Обновление игрового поля после ввода слова
+        function updateBoard(guess) {
+            const row = board.children[attempt];
+            for (let i = 0; i < 5; i++) {
+                const cell = row.children[i];
+                cell.textContent = guess[i];
+                if (guess[i] === secretWord[i]) {
+                    cell.style.backgroundColor = "#6aaa64"; // Зеленый: правильная буква на правильном месте
+                } else if (secretWord.includes(guess[i])) {
+                    cell.style.backgroundColor = "#c9b458"; // Желтый: правильная буква на неправильном месте
+                } else {
+                    cell.style.backgroundColor = "#787c7e"; // Серый: буква отсутствует в слове
+                }
+            }
         }
 
         // Обработка выбора файла
@@ -269,6 +482,7 @@
             guessInput.disabled = false;
             submitButton.disabled = false;
             message.textContent = "Игра началась! Введите слово.";
+            initKeyboard(); // Инициализируем клавиатуру
         }
 
         // Создание игрового поля
@@ -286,54 +500,18 @@
             }
         }
 
-        // Обновление игрового поля после ввода слова
-        function updateBoard(guess) {
-            const row = board.children[attempt];
-            for (let i = 0; i < 5; i++) {
-                const cell = row.children[i];
-                cell.textContent = guess[i];
-                if (guess[i] === secretWord[i]) {
-                    cell.style.backgroundColor = "#6aaa64"; // Зеленый: правильная буква на правильном месте
-                } else if (secretWord.includes(guess[i])) {
-                    cell.style.backgroundColor = "#c9b458"; // Желтый: правильная буква на неправильном месте
-                } else {
-                    cell.style.backgroundColor = "#787c7e"; // Серый: буква отсутствует в слове
-                }
-            }
-        }
-
-        // Проверка введенного слова
-        function checkGuess(guess) {
-            if (guess.length !== 5) {
-                message.textContent = "Слово должно быть из 5 букв!";
-                return;
-            }
-
-            if (!validWords.includes(guess)) {
-                message.textContent = "Слово не найдено в списке допустимых слов!";
-                return;
-            }
-
-            updateBoard(guess);
-            attempt++;
-
-            if (guess === secretWord) {
-                message.textContent = "Поздравляем! Вы угадали слово!";
-                submitButton.disabled = true;
-            } else if (attempt === maxAttempts) {
-                message.textContent = `Игра окончена! Загаданное слово было: ${secretWord}`;
-                submitButton.disabled = true;
-            } else {
-                message.textContent = "";
-            }
-        }
-
         // Обработка нажатия кнопки "Отправить"
         submitButton.addEventListener("click", () => {
             const guess = guessInput.value.toUpperCase();
             guessInput.value = "";
             checkGuess(guess);
         });
+
+        // Обработка нажатия кнопки "Новое слово"
+        newWordButton.addEventListener("click", () => {
+            generateNewWord();
+        });
+
         // Инициализация при загрузке страницы
         updateLeaderboard();
     </script>
