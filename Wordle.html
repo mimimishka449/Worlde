@@ -90,21 +90,21 @@ body {
             perspective: 1000px;
         }
 
-        .cell[data-animation="flip"] {
-            animation: flip 0.5s ease-in-out forwards;
-        }
+		.cell[data-animation="flip"] {
+			animation: flip 0.5s ease-in-out forwards;
+		}
 
-        @keyframes flip {
-            0% {
-                transform: rotateX(0deg);
-            }
-            50% {
-                transform: rotateX(90deg);
-            }
-            100% {
-                transform: rotateX(0deg);
-            }
-        }
+		@keyframes flip {
+			0% {
+				transform: rotateX(0deg);
+			}
+			50% {
+				transform: rotateX(90deg);
+			}
+			100% {
+				transform: rotateX(0deg);
+			}
+		}
 
         .cell .front, .cell .back {
             position: absolute;
@@ -284,6 +284,9 @@ body {
             margin-bottom: 20px;
         }
     </style>
+	<audio id="click-sound" src="sounds/click.wav"></audio>
+    <audio id="correct-sound" src="sounds/correct.wav"></audio>
+    <audio id="wrong-sound" src="sounds/wrong.wav"></audio>
 </head>
 <body>
     <!-- Окно регистрации и входа -->
@@ -360,57 +363,71 @@ body {
     </div>
 
     <script>
-        // Словари для перевода
-        const translations = {
-            en: {
-                authTitle: "Wordle",
-                usernamePlaceholder: "Username",
-                passwordPlaceholder: "Password",
-                registerButton: "Register",
-                loginButton: "Login",
-                leaderboardTitle: "Leaderboard",
-                leaderboardName: "Name",
-                leaderboardRecord: "Record",
-                personalRecordTitle: "Your Record:",
-                guessInputPlaceholder: "Enter a word",
-                submitButton: "Submit",
-                restartButton: "Restart",
-                totalGamesText: "Total Games:",
-                statsRecordText: "Best Record:",
-                backButton: "Back",
-                statsButton: "Personal Stats",
-                fileInputLabel: "Choose File",
-                fileStatus: "No file chosen",
-                authMessageFile: "Please upload words.txt.",
-                authMessageFileRU: "Please upload wordsRU.txt.",
-                gameStartMessage: "Game started! Enter a word.",
-                wrongFileMessage: "Please upload the correct file for the selected language.",
-            },
-            ru: {
-                authTitle: "Wordle",
-                usernamePlaceholder: "Имя пользователя",
-                passwordPlaceholder: "Пароль",
-                registerButton: "Зарегистрироваться",
-                loginButton: "Войти",
-                leaderboardTitle: "Таблица лидеров",
-                leaderboardName: "Имя",
-                leaderboardRecord: "Рекорд",
-                personalRecordTitle: "Ваш рекорд:",
-                guessInputPlaceholder: "Введите слово",
-                submitButton: "Отправить",
-                restartButton: "Начать сначала",
-                totalGamesText: "Количество игр:",
-                statsRecordText: "Рекорд отгаданных слов:",
-                backButton: "Назад",
-                statsButton: "Личная статистика",
-                fileInputLabel: "Выбрать файл",
-                fileStatus: "Файл не выбран",
-                authMessageFile: "Пожалуйста, загрузите words.txt.",
-                authMessageFileRU: "Пожалуйста, загрузите wordsRU.txt.",
-                gameStartMessage: "Игра началась! Введите слово.",
-                wrongFileMessage: "Пожалуйста, загрузите правильный файл для выбранного языка.",
-            },
-        };
+       // Словари для перевода
+		const translations = {
+			en: {
+				authTitle: "Wordle",
+				usernamePlaceholder: "Username",
+				passwordPlaceholder: "Password",
+				registerButton: "Register",
+				loginButton: "Login",
+				leaderboardTitle: "Leaderboard",
+				leaderboardName: "Name",
+				leaderboardRecord: "Record",
+				personalRecordTitle: "Your Record:",
+				guessInputPlaceholder: "Enter a word",
+				submitButton: "Submit",
+				restartButton: "Restart",
+				totalGamesText: "Total Games:",
+				statsRecordText: "Best Record:",
+				backButton: "Back",
+				statsButton: "Personal Stats",
+				fileInputLabel: "Choose File",
+				fileStatus: "No file chosen",
+				authMessageFile: "Please upload words.txt.",
+				authMessageFileRU: "Please upload wordsRU.txt.",
+				gameStartMessage: "Game started! Enter a word.",
+				wordLengthError: "The word must be 5 letters long!",
+				wordNotFoundError: "The word is not in the list of valid words!",
+				winMessage: "Congratulations! You guessed the word!",
+				loseMessage: "Game over! The secret word was: ",
+				authMessage: "Please enter a username and password.",
+				userExistsMessage: "User already exists.",
+				registerSuccessMessage: "Registration successful! Please log in.",
+				authErrorMessage: "Incorrect username or password.",
+			},
+			ru: {
+				authTitle: "Wordle",
+				usernamePlaceholder: "Имя пользователя",
+				passwordPlaceholder: "Пароль",
+				registerButton: "Зарегистрироваться",
+				loginButton: "Войти",
+				leaderboardTitle: "Таблица лидеров",
+				leaderboardName: "Имя",
+				leaderboardRecord: "Рекорд",
+				personalRecordTitle: "Ваш рекорд:",
+				guessInputPlaceholder: "Введите слово",
+				submitButton: "Отправить",
+				restartButton: "Начать сначала",
+				totalGamesText: "Количество игр:",
+				statsRecordText: "Рекорд отгаданных слов:",
+				backButton: "Назад",
+				statsButton: "Личная статистика",
+				fileInputLabel: "Выбрать файл",
+				fileStatus: "Файл не выбран",
+				authMessageFile: "Пожалуйста, загрузите words.txt.",
+				authMessageFileRU: "Пожалуйста, загрузите wordsRU.txt.",
+				gameStartMessage: "Игра началась! Введите слово.",
+				wordLengthError: "Слово должно быть из 5 букв!",
+				wordNotFoundError: "Слово не найдено в списке допустимых слов!",
+				winMessage: "Поздравляем! Вы угадали слово!",
+				loseMessage: "Игра окончена! Загаданное слово было: ",
+				authMessage: "Введите имя пользователя и пароль.",
+				userExistsMessage: "Пользователь уже существует.",
+				registerSuccessMessage: "Регистрация успешна! Войдите в систему.",
+				authErrorMessage: "Неверное имя пользователя или пароль.",
+			},
+		};
 
         // Раскладки клавиатуры
         const keyboardLayouts = {
@@ -461,7 +478,7 @@ body {
         }
 
         // Перевод интерфейса
-        function translatePage(lang) {
+		function translatePage(lang) {
 			const texts = translations[lang];
 			authTitle.textContent = texts.authTitle;
 			usernameInput.placeholder = texts.usernamePlaceholder;
@@ -509,7 +526,7 @@ body {
         });
 
         // Обработка выбора файла
-        fileInput.addEventListener("change", (event) => {
+		fileInput.addEventListener("change", (event) => {
 			const file = event.target.files[0];
 			const expectedFileName = currentLanguage === "ru" ? "wordsRU.txt" : "words.txt";
 
@@ -579,6 +596,16 @@ body {
 				}
 			});
 		}
+		// Звуковые эффекты
+		const clickSound = document.getElementById("click-sound");
+		const correctSound = document.getElementById("correct-sound");
+		const wrongSound = document.getElementById("wrong-sound");
+
+		// Воспроизведение звука
+		function playSound(sound) {
+			sound.currentTime = 0; // Перемотать звук в начало
+			sound.play();
+		}
 
         // Загрузка слов из файла
         function loadWords(file) {
@@ -605,19 +632,21 @@ body {
 			createBoard(); // Создаем новое игровое поле
 			guessInput.disabled = false;
 			submitButton.disabled = false;
-			message.textContent = "Игра началась! Введите слово.";
+			message.textContent = translations[currentLanguage].gameStartMessage;
 			initKeyboard(); // Сбрасываем состояние клавиатуры
 		}
 
-        // Проверка введенного слова
+		// Проверка введенного слова
 		function checkGuess(guess) {
 			if (guess.length !== 5) {
-				message.textContent = "Слово должно быть из 5 букв!";
+				message.textContent = translations[currentLanguage].wordLengthError;
+				playSound(wrongSound); // Звук ошибки
 				return;
 			}
 
 			if (!validWords.includes(guess)) {
-				message.textContent = "Слово не найдено в списке допустимых слов!";
+				message.textContent = translations[currentLanguage].wordNotFoundError;
+				playSound(wrongSound); // Звук ошибки
 				return;
 			}
 
@@ -626,36 +655,43 @@ body {
 			attempt++;
 
 			if (guess === secretWord) {
-				message.textContent = "Поздравляем! Вы угадали слово!";
+				message.textContent = translations[currentLanguage].winMessage;
 				submitButton.disabled = true;
 				updateRecord();
+				playSound(correctSound); // Звук победы
 			} else if (attempt === maxAttempts) {
-				message.textContent = `Игра окончена! Загаданное слово было: ${secretWord}`;
+				message.textContent = translations[currentLanguage].loseMessage + secretWord;
 				submitButton.disabled = true;
+				playSound(wrongSound); // Звук поражения
 			} else {
 				message.textContent = "";
 			}
 		}
 
         // Обновление игрового поля после ввода слова
-        function updateBoard(guess) {
+		function updateBoard(guess) {
 			const row = board.children[attempt];
 			for (let i = 0; i < 5; i++) {
-				const cell = row.children[i];
-				cell.textContent = guess[i];
-				cell.setAttribute("data-animation", "flip"); // Добавляем атрибут для анимации
+				setTimeout(() => {
+					const cell = row.children[i];
+					cell.textContent = guess[i];
+					cell.setAttribute("data-animation", "flip"); // Добавляем атрибут для анимации
 
-				// Обработка завершения анимации
-				cell.addEventListener("animationend", () => {
-					cell.removeAttribute("data-animation"); // Удаляем атрибут после завершения
-					if (guess[i] === secretWord[i]) {
-						cell.style.backgroundColor = "#6aaa64"; // Зеленый
-					} else if (secretWord.includes(guess[i])) {
-						cell.style.backgroundColor = "#c9b458"; // Желтый
-					} else {
-						cell.style.backgroundColor = "#787c7e"; // Серый
-					}
-				}, { once: true }); // Обработчик сработает только один раз
+					// Воспроизводим звук нажатия
+					playSound(clickSound);
+
+					// Обработка завершения анимации
+					cell.addEventListener("animationend", () => {
+						cell.removeAttribute("data-animation"); // Удаляем атрибут после завершения
+						if (guess[i] === secretWord[i]) {
+							cell.style.backgroundColor = "#6aaa64"; // Зеленый
+						} else if (secretWord.includes(guess[i])) {
+							cell.style.backgroundColor = "#c9b458"; // Желтый
+						} else {
+							cell.style.backgroundColor = "#787c7e"; // Серый
+						}
+					}, { once: true }); // Обработчик сработает только один раз
+				}, i * 140); // Задержка 0,14 секунды между буквами
 			}
 		}
 
@@ -670,43 +706,45 @@ body {
         });
 
         // Регистрация нового пользователя
-        registerButton.addEventListener("click", () => {
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value.trim();
+		registerButton.addEventListener("click", () => {
+			const username = usernameInput.value.trim();
+			const password = passwordInput.value.trim();
 
-            if (!username || !password) {
-                authMessage.textContent = "Введите имя пользователя и пароль.";
-                return;
-            }
+			if (!username || !password) {
+				authMessage.textContent = translations[currentLanguage].authMessage;
+				return;
+			}
 
-            const users = JSON.parse(localStorage.getItem("users")) || {};
-            if (users[username]) {
-                authMessage.textContent = "Пользователь уже существует.";
-                return;
-            }
+			const users = JSON.parse(localStorage.getItem("users")) || {};
+			if (users[username]) {
+				authMessage.textContent = translations[currentLanguage].userExistsMessage;
+				return;
+			}
 
-            users[username] = { password: hashPassword(password), record: 0, totalGames: 0 };
-            localStorage.setItem("users", JSON.stringify(users));
-            authMessage.textContent = "Регистрация успешна! Войдите в систему.";
-        });
+			users[username] = { password: hashPassword(password), record: 0, totalGames: 0 };
+			localStorage.setItem("users", JSON.stringify(users));
+			authMessage.textContent = translations[currentLanguage].registerSuccessMessage;
+		});
 
         // Вход пользователя
-        loginButton.addEventListener("click", () => {
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value.trim();
+		loginButton.addEventListener("click", () => {
+			const username = usernameInput.value.trim();
+			const password = passwordInput.value.trim();
 
-            const users = JSON.parse(localStorage.getItem("users")) || {};
-            if (!users[username] || users[username].password !== hashPassword(password)) {
-                authMessage.textContent = "Неверное имя пользователя или пароль.";
-                return;
-            }
-            currentUser = username;
-            authContainer.style.display = "none";
-            container.style.display = "block";
-            updateLeaderboard();
-            recordValue.textContent = users[username].record;
-            initGame();
-        });
+			const users = JSON.parse(localStorage.getItem("users")) || {};
+			if (!users[username] || users[username].password !== hashPassword(password)) {
+				authMessage.textContent = translations[currentLanguage].authErrorMessage;
+				return;
+			}
+
+			currentUser = username;
+			authContainer.style.display = "none";
+			container.style.display = "block";
+			updateLeaderboard();
+			recordValue.textContent = users[username].record;
+			totalGames.textContent = users[username].totalGames; // Отображаем количество игр
+			initGame();
+		});
 
         // Обновление таблицы лидеров
         function updateLeaderboard() {
@@ -738,12 +776,12 @@ body {
             createBoard();
             guessInput.disabled = false;
             submitButton.disabled = false;
-            message.textContent = "Игра началась! Введите слово.";
+            message.textContent = translations[currentLanguage].gameStartMessage;
             initKeyboard(); // Инициализируем клавиатуру
         }
 
         // Инициализация игрового поля
-        function createBoard() {
+		function createBoard() {
 			board.innerHTML = ""; // Очищаем поле
 			for (let i = 0; i < maxAttempts; i++) {
 				const row = document.createElement("div");
@@ -764,26 +802,27 @@ body {
         });
 
         // Обработка нажатия кнопки "Начать сначала"
-        restartButton.addEventListener("click", () => {
-            const users = JSON.parse(localStorage.getItem("users")) || {};
-            if (currentUser && users[currentUser]) {
-                users[currentUser].totalGames++; // Увеличиваем количество сыгранных игр
-                localStorage.setItem("users", JSON.stringify(users));
-            }
-            generateNewWord(); // Генерация нового слова
-        });
+		restartButton.addEventListener("click", () => {
+			const users = JSON.parse(localStorage.getItem("users")) || {};
+			if (currentUser && users[currentUser]) {
+				users[currentUser].totalGames++; // Увеличиваем количество игр
+				localStorage.setItem("users", JSON.stringify(users));
+				totalGames.textContent = users[currentUser].totalGames; // Обновляем интерфейс
+			}
+			generateNewWord(); // Генерация нового слова
+		});
 
         // Обработка нажатия кнопки "Личная статистика"
-        statsButton.addEventListener("click", () => {
-            const users = JSON.parse(localStorage.getItem("users")) || {};
-            if (currentUser && users[currentUser]) {
-                statsUsername.textContent = `Пользователь: ${currentUser}`;
-                totalGames.textContent = users[currentUser].totalGames;
-                statsRecord.textContent = users[currentUser].record;
-                container.style.display = "none"; // Скрываем игровой интерфейс
-                statsPage.style.display = "block"; // Показываем страницу статистики
-            }
-        });
+		statsButton.addEventListener("click", () => {
+			const users = JSON.parse(localStorage.getItem("users")) || {};
+			if (currentUser && users[currentUser]) {
+				statsUsername.textContent = `Пользователь: ${currentUser}`;
+				totalGames.textContent = users[currentUser].totalGames; // Обновляем количество игр
+				statsRecord.textContent = users[currentUser].record;
+				container.style.display = "none"; // Скрываем игровой интерфейс
+				statsPage.style.display = "block"; // Показываем страницу статистики
+			}
+		});
 
         // Обработка нажатия кнопки "Назад" на странице статистики
         backButton.addEventListener("click", () => {
