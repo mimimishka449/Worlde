@@ -1,0 +1,312 @@
+:root{
+		  --main-bg-color: #dfe4ea;
+		  --second-bg-color: #f1f2f6;
+		  --key-bg-correct: #6aaa64; /* Зеленый */
+		  --key-bg-exists: #c9b458; /* Желтый */
+		  --key-bg-none: #787c7e; /* Серый */
+		  --text-color: #2f3542;
+		}
+		
+:root[theme='banana'] {
+		  --main-bg-color: #192214;
+		  --second-bg-color: #676f57;
+		  --key-bg-correct: #6aaa64; /* Зеленый */
+		  --key-bg-exists: #c9b458; /* Желтый */
+		  --key-bg-none: #787c7e; /* Серый */
+		  --text-color: #bfe29d;
+		}
+		
+:root[theme='orange'] {
+		  --main-bg-color: #42362f;
+		  --second-bg-color: #a57f3d;
+		  --key-bg-correct: #6aaa64; /* Зеленый */
+		  --key-bg-exists: #c9b458; /* Желтый */
+		  --key-bg-none: #787c7e; /* Серый */
+		  --text-color: #f9ce7a;
+		}
+
+body {
+            font-family: Arial, sans-serif;
+			color: var(--text-color);
+            background-color: var(--main-bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        .container {
+            text-align: center;
+            background-color: var(--main-bg-color);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: none; /* Скрываем контейнер игры по умолчанию */
+        }
+
+        #auth-container {
+            text-align: center;
+            background-color: var(--main-bg-color);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #file-input-container {
+            margin-bottom: 20px;
+        }
+
+        #game-wrapper {
+            display: flex;
+            gap: 40px; /* Расстояние между элементами */
+        }
+
+        #left-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Центрируем таблицу лидеров */
+            gap: 20px;
+        }
+
+        #right-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Центрируем клавиатуру */
+            gap: 20px;
+        }
+
+        #title {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        #board {
+            display: grid;
+            grid-template-rows: repeat(6, 60px);
+            grid-gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(5, 60px);
+            grid-gap: 5px;
+        }
+
+        .cell {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #ccc;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            position: relative;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+		.cell[data-animation="flip"] {
+			animation: flip 0.5s ease-in-out forwards;
+		}
+
+		@keyframes flip {
+			0% {
+				transform: rotateX(0deg);
+			}
+			50% {
+				transform: rotateX(90deg);
+			}
+			100% {
+				transform: rotateX(0deg);
+			}
+		}
+
+        .cell .front, .cell .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .cell .front {
+            background-color: var(--main-bg-color);
+        }
+
+        .cell .back {
+            background-color: var(--second-bg-color);
+            transform: rotateX(180deg);
+        }
+
+        #file-input-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #file-input-label {
+            padding: 10px;
+            background-color: var(--second-bg-color);
+            border: 1px solid #ccc;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #file-status {
+            font-size: 14px;
+            color: #666;
+        }
+
+        #keyboard {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            gap: 5px;
+        }
+
+        .key {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            background-color: var(--second-bg-color);
+        }
+
+        .key.correct {
+            background-color: var(--key-bg-correct);
+            color: white;
+        }
+
+        .key.exists {
+            background-color: var(--key-bg-exists);
+            color: white;
+        }
+
+        .key.none {
+            background-color: var(--key-bg-none);
+            color: white;
+        }
+
+        #guess-input {
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+            margin-right: 10px;
+        }
+
+		button {
+			color: var(--text-color);
+			background-color: var(--main-bg-color);
+			border-color: var(--second-bg-color);
+		}
+
+        #submit-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #restart-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #leaderboard {
+            font-size: 16px;
+        }
+
+        #leaderboard table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #leaderboard th, #leaderboard td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        #leaderboard th {
+            background-color: var(--second-bg-color);
+        }
+
+        #personal-record {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center; /* Центрируем надпись "Ваш рекорд" */
+        }
+
+        #center-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Центрируем игровое поле и кнопки */
+            gap: 20px;
+        }
+
+        #stats-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #stats-page {
+            display: none; /* Скрываем страницу статистики по умолчанию */
+            text-align: center;
+            background-color: var(--main-bg-color);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #stats-page h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        #stats-page p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        #back-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #language-selector {
+            margin-bottom: 20px;
+        }
