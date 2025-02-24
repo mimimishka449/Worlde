@@ -7,7 +7,7 @@
 		  --text-color: #2f3542;
 		}
 		
-:root[theme='banana'] {
+		:root[theme='banana'] {
 		  --main-bg-color: #192214;
 		  --second-bg-color: #676f57;
 		  --key-bg-correct: #6aaa64; /* Зеленый */
